@@ -48,7 +48,7 @@ print(f"[WSL] Init Controller (MAC: {CONFIG['MAC']})")
 try:
     controller = nx.create_controller(
         nxbt.PRO_CONTROLLER,
-        reconnect_address=nx.create_reconnect_address(CONFIG['MAC'])
+        reconnect_address=nxbt.create_reconnect_address(CONFIG['MAC'])
     )
 except:
     print("[WSL] Reconnect failed, creating new controller...")
