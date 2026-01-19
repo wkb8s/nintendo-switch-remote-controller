@@ -1,8 +1,7 @@
 import socket, keyboard, yaml, time, subprocess
 
-print("--- Client Diagnostic Mode (Auto-IP) ---")
+print("--- Client (Mac RDP Friendly) ---")
 
-# 設定読み込み
 try:
     with open("config.yaml", encoding="utf-8") as f:
         conf = yaml.safe_load(f)
@@ -12,28 +11,38 @@ except:
 PORT = conf["system"]["port"]
 KEY_MAP = conf["key_mapping"]
 
-# ★修正ポイント: WSLの正しいIPアドレスを自動取得する
-print("Detecting WSL IP Address...")
+# IP自動検出
+print("Detecting WSL IP...")
 try:
-    # wslコマンドを使ってIPを調べる
-    result = subprocess.run(["wsl", "hostname", "-I"], capture_output=True, text=True)
-    wsl_ip = result.stdout.strip().split()[0]
-    print(f"-> Found WSL IP: {wsl_ip}")
+    res = subprocess.run(["wsl", "hostname", "-I"], capture_output=True, text=True)
+    wsl_ip = res.stdout.strip().split()[0]
     ADDR = (wsl_ip, PORT)
-except Exception as e:
-    print(f"-> Failed to detect IP ({e}). Fallback to localhost.")
+    print(f"-> Target: {wsl_ip}")
+except:
     ADDR = ("127.0.0.1", PORT)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+# 連打防止用クールダウン (秒)
+last_send_time = 0
+COOLDOWN = 0.15
+
 def send(key_name, cmd):
-    print(f"Key [{key_name}] -> Sending {cmd} to {ADDR}...")
+    global last_send_time
+    current_time = time.time()
+
+    # クールダウン中なら何もしない
+    if current_time - last_send_time < COOLDOWN:
+        return
+
+    last_send_time = current_time
+    # print(f"Key [{key_name}] -> {cmd}")
     try:
         sock.sendto(cmd.encode(), ADDR)
-    except Exception as e:
-        print(f"Send Error: {e}")
+    except: pass
 
-print("Ready. Press [End] to exit.")
+# ★変更点: 終了キーの案内
+print("Ready. Press [Ctrl+D] to exit.")
 
 # キー登録
 for k, v in KEY_MAP.items():
@@ -41,4 +50,5 @@ for k, v in KEY_MAP.items():
         keyboard.on_press_key(str(k).lower(), lambda _, k=k, c=v: send(k, c))
     except: pass
 
-keyboard.wait("end")
+# ★変更点: Endキーではなく Ctrl+D を待つように変更
+keyboard.wait("ctrl+d")
