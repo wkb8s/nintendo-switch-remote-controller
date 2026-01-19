@@ -1,4 +1,4 @@
-import socket, nxbt, time, os, pickle, traceback
+import socket, nxbt, time, os, pickle
 
 # --- Bluetoothを叩き起こす ---
 os.system("service bluetooth start")
@@ -39,7 +39,7 @@ BUTTON_MAP = {
 nx = nxbt.Nxbt()
 print(f"[WSL] Init Controller")
 
-# --- ★前回保存したSwitchのMACアドレスを読み込む ---
+# --- 保存されたSwitchのMACアドレスを読み込む ---
 saved_switch_mac = None
 if os.path.exists("switch_mac.pickle"):
     try:
@@ -51,17 +51,18 @@ if os.path.exists("switch_mac.pickle"):
 
 controller = None
 
-# --- コントローラー作成 (再接続 または 新規ペアリング) ---
+# --- コントローラー作成 ---
 if saved_switch_mac:
     try:
-        # 保存されたMACアドレスを使って再接続パケットを作成
-        reconnect_addr = nxbt.create_reconnect_address(saved_switch_mac)
-        controller = nx.create_controller(nxbt.PRO_CONTROLLER, reconnect_address=reconnect_addr)
+        # ★修正箇所: 変換などはせず、MACアドレスを「そのまま」渡すのが正解でした
+        controller = nx.create_controller(
+            nxbt.PRO_CONTROLLER,
+            reconnect_address=saved_switch_mac
+        )
     except Exception as e:
         print(f"[WSL] Reconnect failed ({e}). Fallback to pairing.")
 
 if controller is None:
-    # 鍵がない、または失敗した場合は新規ペアリングモード
     print("[WSL] Starting Pairing Mode (Please open 'Change Grip/Order')...")
     controller = nx.create_controller(nxbt.PRO_CONTROLLER)
 
@@ -69,20 +70,17 @@ print("[WSL] Waiting for Connection...")
 nx.wait_for_connection(controller)
 print("[WSL] CONNECTED! Listening for commands...")
 
-# --- ★重要: 正しい方法でSwitchのMACアドレスを取得して保存 ---
+# --- SwitchのMACアドレスを保存 (初回のみ機能) ---
 try:
-    # 接続されているSwitchを探す
-    switches = nx.get_switch_addresses()
-    if switches and len(switches) > 0:
-        target_mac = switches[0] # 最初に見つかったSwitchを保存
-        with open("switch_mac.pickle", "wb") as f:
-            pickle.dump(target_mac, f)
-        print(f"[WSL] Saved Switch MAC ({target_mac}) for next time.")
-    else:
-        print("[WSL] Warning: Could not detect Switch MAC address automatically.")
+    if not saved_switch_mac:
+        switches = nx.get_switch_addresses()
+        if switches and len(switches) > 0:
+            target_mac = switches[0]
+            with open("switch_mac.pickle", "wb") as f:
+                pickle.dump(target_mac, f)
+            print(f"[WSL] Saved Switch MAC ({target_mac}) for next time.")
 except Exception as e:
     print(f"[WSL] Failed to save connection info: {e}")
-    # traceback.print_exc()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('0.0.0.0', CONFIG['PORT']))
