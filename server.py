@@ -1,29 +1,31 @@
-import socket, nxbt, time, os
+import socket, nxbt, time
 
-# 簡易Configパーサー (ライブラリ依存を減らすため手動解析)
-CONFIG = {}
+# 簡易Config読み込み
+CONFIG = {"PORT": 5005, "MAC": "B8:27:EB:00:53:01"} # デフォルト
 try:
     with open("config.yaml", "r") as f:
         for line in f:
             if "port:" in line: CONFIG["PORT"] = int(line.split(":")[1].strip())
             if "mac_address:" in line: CONFIG["MAC"] = line.split(":")[1].strip().replace('"', '')
-except:
-    print("Config Error")
-    exit()
+except: pass
 
+# --- ここを修正: スティックはマクロで定義 ---
+STICK_MACROS = {
+    'L_UP': "L_STICK@000+100 0.1s",    'L_DOWN': "L_STICK@000-100 0.1s",
+    'L_LEFT': "L_STICK@-100+000 0.1s", 'L_RIGHT': "L_STICK@100+000 0.1s",
+    'R_UP': "R_STICK@000+100 0.1s",    'R_DOWN': "R_STICK@000-100 0.1s",
+    'R_LEFT': "R_STICK@-100+000 0.1s", 'R_RIGHT': "R_STICK@100+000 0.1s",
+}
+
+# --- 通常のボタン ---
 BUTTON_MAP = {
-    'L_UP': [nxbt.Buttons.L_STICK_UP], 'L_DOWN': [nxbt.Buttons.L_STICK_DOWN],
-    'L_LEFT': [nxbt.Buttons.L_STICK_LEFT], 'L_RIGHT': [nxbt.Buttons.L_STICK_RIGHT],
-    'L_PRESS': [nxbt.Buttons.L_STICK_PRESS],
-    'R_UP': [nxbt.Buttons.R_STICK_UP], 'R_DOWN': [nxbt.Buttons.R_STICK_DOWN],
-    'R_LEFT': [nxbt.Buttons.R_STICK_LEFT], 'R_RIGHT': [nxbt.Buttons.R_STICK_RIGHT],
-    'R_PRESS': [nxbt.Buttons.R_STICK_PRESS],
-    'DPAD_UP': [nxbt.Buttons.DPAD_UP], 'DPAD_DOWN': [nxbt.Buttons.DPAD_DOWN],
-    'DPAD_LEFT': [nxbt.Buttons.DPAD_LEFT], 'DPAD_RIGHT': [nxbt.Buttons.DPAD_RIGHT],
     'A': [nxbt.Buttons.A], 'B': [nxbt.Buttons.B], 'X': [nxbt.Buttons.X], 'Y': [nxbt.Buttons.Y],
     'L': [nxbt.Buttons.L], 'ZL': [nxbt.Buttons.ZL], 'R': [nxbt.Buttons.R], 'ZR': [nxbt.Buttons.ZR],
     'PLUS': [nxbt.Buttons.PLUS], 'MINUS': [nxbt.Buttons.MINUS],
-    'HOME': [nxbt.Buttons.HOME], 'CAPTURE': [nxbt.Buttons.CAPTURE]
+    'HOME': [nxbt.Buttons.HOME], 'CAPTURE': [nxbt.Buttons.CAPTURE],
+    'DPAD_UP': [nxbt.Buttons.DPAD_UP], 'DPAD_DOWN': [nxbt.Buttons.DPAD_DOWN],
+    'DPAD_LEFT': [nxbt.Buttons.DPAD_LEFT], 'DPAD_RIGHT': [nxbt.Buttons.DPAD_RIGHT],
+    'L_PRESS': [nxbt.Buttons.L_STICK_PRESS], 'R_PRESS': [nxbt.Buttons.R_STICK_PRESS],
 }
 
 nx = nxbt.Nxbt()
@@ -43,5 +45,8 @@ while True:
     try:
         data, _ = sock.recvfrom(1024)
         cmd = data.decode()
-        if cmd in BUTTON_MAP: nx.press_buttons(controller, BUTTON_MAP[cmd], down=0.1)
+        if cmd in STICK_MACROS:
+            nx.macro(controller, STICK_MACROS[cmd])
+        elif cmd in BUTTON_MAP:
+            nx.press_buttons(controller, BUTTON_MAP[cmd], down=0.1)
     except: pass
