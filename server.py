@@ -8,33 +8,43 @@ try:
             if "port:" in line:
                 CONFIG["PORT"] = int(line.split(":")[1].strip())
             if "mac_address:" in line:
-                # バグ修正: splitの回数を指定してMACアドレスが切れないように変更
                 CONFIG["MAC"] = line.split(":", 1)[1].strip().replace('"', '').replace("'", "")
 except Exception as e:
     print(f"[Warning] Config load failed: {e}")
 
-# --- マクロとボタン定義 ---
+# --- ★修正1: 十字キーコマンド(DPAD_...) が来たら、逆にスティック(L_STICK)を動かす ---
+# 時間は 0.1s に戻しました
 STICK_MACROS = {
-    'L_UP': "L_STICK@000+100 0.1s",    'L_DOWN': "L_STICK@000-100 0.1s",
-    'L_LEFT': "L_STICK@-100+000 0.1s", 'L_RIGHT': "L_STICK@100+000 0.1s",
-    'R_UP': "R_STICK@000+100 0.1s",    'R_DOWN': "R_STICK@000-100 0.1s",
-    'R_LEFT': "R_STICK@-100+000 0.1s", 'R_RIGHT': "R_STICK@100+000 0.1s",
-    'L_PRESS': "L_STICK_PRESS 0.1s",   'R_PRESS': "R_STICK_PRESS 0.1s",
+    'DPAD_UP':    "L_STICK@+000+100 0.1s",
+    'DPAD_DOWN':  "L_STICK@+000-100 0.1s",
+    'DPAD_LEFT':  "L_STICK@-100+000 0.1s",
+    'DPAD_RIGHT': "L_STICK@+100+000 0.1s",
+
+    # Rスティックはそのまま
+    'R_UP':    "R_STICK@+000+100 0.1s",
+    'R_DOWN':  "R_STICK@+000-100 0.1s",
+    'R_LEFT':  "R_STICK@-100+000 0.1s",
+    'R_RIGHT': "R_STICK@+100+000 0.1s",
+
+    'L_PRESS': "L_STICK_PRESS 0.1s",
+    'R_PRESS': "R_STICK_PRESS 0.1s",
 }
 
+# --- ★修正2: 左スティックコマンド(L_...) が来たら、逆に十字キー(DPAD)を押す ---
+# これにより WASD の反応が劇的に良くなります
 BUTTON_MAP = {
+    'L_UP': [nxbt.Buttons.DPAD_UP],     'L_DOWN': [nxbt.Buttons.DPAD_DOWN],
+    'L_LEFT': [nxbt.Buttons.DPAD_LEFT], 'L_RIGHT': [nxbt.Buttons.DPAD_RIGHT],
+
     'A': [nxbt.Buttons.A], 'B': [nxbt.Buttons.B], 'X': [nxbt.Buttons.X], 'Y': [nxbt.Buttons.Y],
     'L': [nxbt.Buttons.L], 'ZL': [nxbt.Buttons.ZL], 'R': [nxbt.Buttons.R], 'ZR': [nxbt.Buttons.ZR],
     'PLUS': [nxbt.Buttons.PLUS], 'MINUS': [nxbt.Buttons.MINUS],
     'HOME': [nxbt.Buttons.HOME], 'CAPTURE': [nxbt.Buttons.CAPTURE],
-    'DPAD_UP': [nxbt.Buttons.DPAD_UP], 'DPAD_DOWN': [nxbt.Buttons.DPAD_DOWN],
-    'DPAD_LEFT': [nxbt.Buttons.DPAD_LEFT], 'DPAD_RIGHT': [nxbt.Buttons.DPAD_RIGHT],
 }
 
 nx = nxbt.Nxbt()
 print(f"[WSL] Init Controller (MAC: {CONFIG['MAC']})")
 
-# 再接続を試みる
 try:
     controller = nx.create_controller(
         nxbt.PRO_CONTROLLER,
@@ -56,7 +66,7 @@ while True:
         data, _ = sock.recvfrom(1024)
         cmd = data.decode()
 
-        # ★デバッグ用: 信号が届いたら表示する
+        # デバッグ表示
         print(f"[DEBUG] Received: {cmd}")
 
         if cmd in STICK_MACROS:
