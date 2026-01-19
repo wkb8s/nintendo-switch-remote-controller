@@ -1,61 +1,44 @@
-# ==========================================
-# Switch Remote Controller Config
-# ==========================================
-
 system:
-  # bluetooth adapter bus-id (check with 'usbipd list')
+  # usbipd list で確認した BusID
   bus_id: "3-7"
-
-  # switch controller mac address (for reconnection)
+  # Switchに覚えさせる固定MACアドレス
   mac_address: "B8:27:EB:00:53:01"
-
-  # communication port
   port: 5005
-  wsl_ip: "localhost"
-
-# ==========================================
-# Key Mapping (PC Key : Switch Command)
-# ==========================================
-# Available Commands:
-# L_UP, L_DOWN, L_LEFT, L_RIGHT, L_PRESS
-# R_UP, R_DOWN, R_LEFT, R_RIGHT, R_PRESS
-# DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT
-# A, B, X, Y, L, ZL, R, ZR, PLUS, MINUS, HOME, CAPTURE
 
 key_mapping:
-  # Left Stick (WASD)
+  # 左スティック (移動)
   w: L_UP
   s: L_DOWN
   a: L_LEFT
   d: L_RIGHT
   t: L_PRESS
 
-  # Right Stick (Arrow Keys)
+  # 右スティック (矢印キー)
   up: R_UP
   down: R_DOWN
   left: R_LEFT
   right: R_RIGHT
   y: R_PRESS
 
-  # Dpad (Custom Layout: GVBN)
+  # 十字キー
   n: DPAD_UP
   v: DPAD_DOWN
   g: DPAD_LEFT
   b: DPAD_RIGHT
 
-  # Main Buttons
+  # ボタン
   l: A
   k: B
   i: X
   j: Y
 
-  # Triggers
+  # トリガー
   1: L
   2: ZL
   8: R
   9: ZR
 
-  # System
+  # システム
   6: PLUS
   7: MINUS
   "]": HOME
