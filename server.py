@@ -1,4 +1,4 @@
-import socket, nxbt, time, os, pickle
+import socket, nxbt, time, os, pickle, traceback
 
 # --- Bluetoothを叩き起こす ---
 os.system("service bluetooth start")
@@ -39,22 +39,23 @@ BUTTON_MAP = {
 nx = nxbt.Nxbt()
 print(f"[WSL] Init Controller")
 
-# --- ★重要: 前回の接続情報(鍵)があれば読み込む ---
-reconnect_addr = None
-if os.path.exists("reconnect_info.pickle"):
+# --- ★前回保存したSwitchのMACアドレスを読み込む ---
+saved_switch_mac = None
+if os.path.exists("switch_mac.pickle"):
     try:
-        with open("reconnect_info.pickle", "rb") as f:
-            reconnect_addr = pickle.load(f)
-        print("[WSL] Found saved connection info!")
+        with open("switch_mac.pickle", "rb") as f:
+            saved_switch_mac = pickle.load(f)
+        print(f"[WSL] Found saved Switch MAC: {saved_switch_mac}")
     except:
         print("[WSL] Saved info corrupted.")
 
 controller = None
 
 # --- コントローラー作成 (再接続 または 新規ペアリング) ---
-if reconnect_addr:
+if saved_switch_mac:
     try:
-        # 鍵を使って再接続を試みる
+        # 保存されたMACアドレスを使って再接続パケットを作成
+        reconnect_addr = nxbt.create_reconnect_address(saved_switch_mac)
         controller = nx.create_controller(nxbt.PRO_CONTROLLER, reconnect_address=reconnect_addr)
     except Exception as e:
         print(f"[WSL] Reconnect failed ({e}). Fallback to pairing.")
@@ -68,14 +69,20 @@ print("[WSL] Waiting for Connection...")
 nx.wait_for_connection(controller)
 print("[WSL] CONNECTED! Listening for commands...")
 
-# --- ★重要: 次回のために接続情報(鍵)を保存する ---
+# --- ★重要: 正しい方法でSwitchのMACアドレスを取得して保存 ---
 try:
-    new_addr = nx.get_reconnect_address(controller)
-    with open("reconnect_info.pickle", "wb") as f:
-        pickle.dump(new_addr, f)
-    print("[WSL] Connection info SAVED for next time.")
-except:
-    print("[WSL] Failed to save connection info.")
+    # 接続されているSwitchを探す
+    switches = nx.get_switch_addresses()
+    if switches and len(switches) > 0:
+        target_mac = switches[0] # 最初に見つかったSwitchを保存
+        with open("switch_mac.pickle", "wb") as f:
+            pickle.dump(target_mac, f)
+        print(f"[WSL] Saved Switch MAC ({target_mac}) for next time.")
+    else:
+        print("[WSL] Warning: Could not detect Switch MAC address automatically.")
+except Exception as e:
+    print(f"[WSL] Failed to save connection info: {e}")
+    # traceback.print_exc()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('0.0.0.0', CONFIG['PORT']))
