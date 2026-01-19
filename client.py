@@ -1,4 +1,4 @@
-import socket, keyboard, yaml, time, subprocess, sys
+import socket, keyboard, yaml, time, subprocess
 
 print("--- Client (Ctrl+C or Q to Exit) ---")
 
@@ -12,46 +12,48 @@ PORT = conf["system"]["port"]
 KEY_MAP = conf["key_mapping"]
 
 # IP自動検出
+print("Detecting WSL IP...")
 try:
     res = subprocess.run(["wsl", "hostname", "-I"], capture_output=True, text=True)
     wsl_ip = res.stdout.strip().split()[0]
     ADDR = (wsl_ip, PORT)
+    print(f"-> Target: {wsl_ip}")
 except:
     ADDR = ("127.0.0.1", PORT)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+# 連打防止用クールダウン (秒) - 元のまま
 last_send_time = 0
-# 滑らか設定 (0.06秒) を維持
-COOLDOWN = 0.06
+COOLDOWN = 0.15
 
 def send(key_name, cmd):
     global last_send_time
     current_time = time.time()
 
+    # クールダウン中なら何もしない
     if current_time - last_send_time < COOLDOWN:
         return
 
     last_send_time = current_time
+    # print(f"Key [{key_name}] -> {cmd}")
     try:
         sock.sendto(cmd.encode(), ADDR)
     except: pass
 
-# --- 終了処理の仕組みを変更 ---
+# --- ★変更点1: 終了制御用のフラグと関数を追加 ---
+print("Ready. Press [Ctrl+C] or [Q] to exit.")
+
 running = True
 def stop_program():
     global running
     running = False
 
-# Ctrl+C と Q の両方を終了キーとして登録
-# (Remote Desktop環境でもどちらかは必ず効くはずです)
+# 終了キーを登録 (Q と Ctrl+C)
 try:
-    keyboard.add_hotkey('ctrl+c', stop_program)
     keyboard.add_hotkey('q', stop_program)
+    keyboard.add_hotkey('ctrl+c', stop_program)
 except: pass
-
-print(f"Target: {ADDR}")
-print("Ready. Press [Ctrl+C] or [Q] to exit.")
 
 # キー登録
 for k, v in KEY_MAP.items():
@@ -59,10 +61,9 @@ for k, v in KEY_MAP.items():
         keyboard.on_press_key(str(k).lower(), lambda _, k=k, c=v: send(k, c))
     except: pass
 
-# メインループ
+# --- ★変更点2: waitの代わりにループ待機に変更 ---
 while running:
     try:
-        time.sleep(0.1)
+        time.sleep(0.5)
     except KeyboardInterrupt:
-        # 万が一 Ctrl+C がOSの割り込みとして処理された場合も安全に終了
-        stop_program()
+        break
