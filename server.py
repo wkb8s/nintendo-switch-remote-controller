@@ -1,5 +1,8 @@
 import socket, nxbt, time, os
 
+os.system("service bluetooth start")
+time.sleep(1)
+
 # --- 設定読み込み ---
 CONFIG = {"PORT": 5005, "MAC": "B8:27:EB:00:53:01"}
 try:
@@ -12,30 +15,22 @@ try:
 except Exception as e:
     print(f"[Warning] Config load failed: {e}")
 
-# --- ★修正1: 十字キーコマンド(DPAD_...) が来たら、逆にスティック(L_STICK)を動かす ---
-# 時間は 0.1s に戻しました
 STICK_MACROS = {
     'DPAD_UP':    "L_STICK@+000+100 0.1s",
     'DPAD_DOWN':  "L_STICK@+000-100 0.1s",
     'DPAD_LEFT':  "L_STICK@-100+000 0.1s",
     'DPAD_RIGHT': "L_STICK@+100+000 0.1s",
-
-    # Rスティックはそのまま
-    'R_UP':    "R_STICK@+000+100 0.1s",
-    'R_DOWN':  "R_STICK@+000-100 0.1s",
-    'R_LEFT':  "R_STICK@-100+000 0.1s",
-    'R_RIGHT': "R_STICK@+100+000 0.1s",
-
-    'L_PRESS': "L_STICK_PRESS 0.1s",
-    'R_PRESS': "R_STICK_PRESS 0.1s",
+    'R_UP':       "R_STICK@+000+100 0.1s",
+    'R_DOWN':     "R_STICK@+000-100 0.1s",
+    'R_LEFT':     "R_STICK@-100+000 0.1s",
+    'R_RIGHT':    "R_STICK@+100+000 0.1s",
+    'L_PRESS':    "L_STICK_PRESS 0.1s",
+    'R_PRESS':    "R_STICK_PRESS 0.1s",
 }
 
-# --- ★修正2: 左スティックコマンド(L_...) が来たら、逆に十字キー(DPAD)を押す ---
-# これにより WASD の反応が劇的に良くなります
 BUTTON_MAP = {
     'L_UP': [nxbt.Buttons.DPAD_UP],     'L_DOWN': [nxbt.Buttons.DPAD_DOWN],
     'L_LEFT': [nxbt.Buttons.DPAD_LEFT], 'L_RIGHT': [nxbt.Buttons.DPAD_RIGHT],
-
     'A': [nxbt.Buttons.A], 'B': [nxbt.Buttons.B], 'X': [nxbt.Buttons.X], 'Y': [nxbt.Buttons.Y],
     'L': [nxbt.Buttons.L], 'ZL': [nxbt.Buttons.ZL], 'R': [nxbt.Buttons.R], 'ZR': [nxbt.Buttons.ZR],
     'PLUS': [nxbt.Buttons.PLUS], 'MINUS': [nxbt.Buttons.MINUS],
@@ -50,8 +45,8 @@ try:
         nxbt.PRO_CONTROLLER,
         reconnect_address=nxbt.create_reconnect_address(CONFIG['MAC'])
     )
-except:
-    print("[WSL] Reconnect failed, creating new controller...")
+except Exception as e:
+    print(f"[WSL] Reconnect failed ({e}). Starting Pairing Mode...")
     controller = nx.create_controller(nxbt.PRO_CONTROLLER)
 
 print("[WSL] Waiting for Connection...")
@@ -66,7 +61,6 @@ while True:
         data, _ = sock.recvfrom(1024)
         cmd = data.decode()
 
-        # デバッグ表示
         print(f"[DEBUG] Received: {cmd}")
 
         if cmd in STICK_MACROS:
