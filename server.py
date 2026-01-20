@@ -74,7 +74,7 @@ except Exception as e:
     util.log(f"Failed to save connection info: {e}", "ERROR")
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('0.0.0.0', CONFIG['PORT']))
+sock.bind(('0.0.0.0', PORT))
 
 while True:
     try:
