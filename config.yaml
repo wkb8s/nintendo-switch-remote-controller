@@ -1,44 +1,43 @@
 system:
-  # usbipd list で確認した BusID
   bus_id: "3-7"
-  # Switchに覚えさせる固定MACアドレス
   mac_address: "B8:27:EB:00:53:01"
+  pickle_filename: "switch_mac.pickle"
   port: 5005
 
 key_mapping:
-  # 左スティック (移動)
+  # Left stick
   w: L_UP
   s: L_DOWN
   a: L_LEFT
   d: L_RIGHT
   t: L_PRESS
 
-  # 右スティック (矢印キー)
+  # Right stick
   up: R_UP
   down: R_DOWN
   left: R_LEFT
   right: R_RIGHT
   y: R_PRESS
 
-  # 十字キー
+  # D-Pad
   n: DPAD_UP
   v: DPAD_DOWN
   g: DPAD_LEFT
   b: DPAD_RIGHT
 
-  # ボタン
+  # Buttons
   l: A
   k: B
   i: X
   j: Y
 
-  # トリガー
+  # Triggers
   1: L
   2: ZL
   8: R
   9: ZR
 
-  # システム
+  # System
   6: PLUS
   7: MINUS
   "]": HOME
