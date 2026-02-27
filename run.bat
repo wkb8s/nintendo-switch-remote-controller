@@ -9,6 +9,7 @@ echo [INFO] Waking up WSL...
 wsl -e ls >nul
 
 echo [INFO] Attaching Bluetooth (BusID: %BUSID%)...
+usbipd bind --busid %BUSID% --force
 usbipd attach --wsl --busid %BUSID%
 
 echo [INFO] Starting WSL Server...
@@ -21,4 +22,6 @@ python client.py
 
 echo [INFO] Closing...
 wsl -u root pkill -f "python3 server.py"
+usbipd detach --busid %BUSID%
+usbipd unbind --busid %BUSID%
 pause
